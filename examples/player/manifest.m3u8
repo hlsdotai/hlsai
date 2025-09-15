@@ -1,0 +1,8 @@
+#EXTM3U
+#EXT-X-VERSION:1
+
+#EXT-X-ZONE:id=1,x=0,y=0,width=640,height=360,fps=60
+zone1.mp4
+
+#EXT-X-ZONE:id=2,x=640,y=0,width=640,height=360,fps=30
+zone2.mp4
