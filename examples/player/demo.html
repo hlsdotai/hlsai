@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>HLS.ai Demo Player</title>
+</head>
+<body>
+  <h1>HLS.ai Split-Screen Demo</h1>
+  <div id="player"></div>
+
+  <script type="module">
+    import { HLSAIPlayer } from "../../player/hlsai-player.js";
+    const player = new HLSAIPlayer("#player", "manifest.m3u8");
+    player.load();
+  </script>
+</body>
+</html>
