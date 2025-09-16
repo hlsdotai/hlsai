@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>HLS.ai Player Demo</title>
+</head>
+<body>
+  <h1>HLS.ai Player Demo</h1>
+  <div id="player"></div>
+
+  <script type="module">
+    import { HLSAIPlayer } from "./hlsai-player.js";
+    const player = new HLSAIPlayer("#player", "output/index.m3u8");
+    player.load();
+  </script>
+</body>
+</html>
