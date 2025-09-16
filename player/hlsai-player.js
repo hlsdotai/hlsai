@@ -2,32 +2,48 @@ export class HLSAIPlayer {
   constructor(containerId, manifestUrl) {
     this.container = document.querySelector(containerId);
     this.manifestUrl = manifestUrl;
-    this.videoZones = [];
+
+    this.video = document.createElement("video");
+    this.video.autoplay = true;
+    this.video.muted = true;
+    this.video.loop = true;
+    this.video.controls = true;
+    this.container.appendChild(this.video);
+
     this.canvas = document.createElement("canvas");
     this.ctx = this.canvas.getContext("2d");
     this.container.appendChild(this.canvas);
+
+    this.zones = [];
   }
 
   async load() {
     const res = await fetch(this.manifestUrl);
     const manifestText = await res.text();
-    this.parseManifest(manifestText);
+    this.parseZonesFromManifest(manifestText);
 
-    // canvas size
+    if (this.zones.length === 0) {
+      const zonesUrl = this.manifestUrl.replace("index.m3u8", "zones.json");
+      const res2 = await fetch(zonesUrl);
+      const json = await res2.json();
+      this.zones = json.segments[0].zones;
+    }
+
+    this.video.src = this.manifestUrl;
+
     let maxW = 0, maxH = 0;
-    this.videoZones.forEach(z => {
-      maxW = Math.max(maxW, z.x + z.width);
-      maxH = Math.max(maxH, z.y + z.height);
+    this.zones.forEach(z => {
+      maxW = Math.max(maxW, z.x + z.w);
+      maxH = Math.max(maxH, z.y + z.h);
     });
     this.canvas.width = maxW;
     this.canvas.height = maxH;
 
-    this.videoZones.forEach(zone => this.startZonePlayback(zone));
+    this.startRendering();
   }
 
-  parseManifest(manifest) {
-    const lines = manifest.split("\n");
-    let currentZone = null;
+  parseZonesFromManifest(manifestText) {
+    const lines = manifestText.split("\n");
     for (let line of lines) {
       if (line.startsWith("#EXT-X-ZONE")) {
         const attrs = Object.fromEntries(
@@ -36,36 +52,28 @@ export class HLSAIPlayer {
             return [k.trim(), v.trim()];
           })
         );
-        currentZone = {
-          id: attrs.id,
+        this.zones.push({
+          id: parseInt(attrs.id),
           x: parseInt(attrs.x),
           y: parseInt(attrs.y),
-          width: parseInt(attrs.width),
-          height: parseInt(attrs.height),
-          fps: parseInt(attrs.fps),
-          url: null,
-          video: null
-        };
-        this.videoZones.push(currentZone);
-      } else if (line.endsWith(".mp4") || line.endsWith(".m3u8")) {
-        if (currentZone) currentZone.url = line.trim();
+          w: parseInt(attrs.width),
+          h: parseInt(attrs.height),
+          fps: parseInt(attrs.fps)
+        });
       }
     }
   }
 
-  async startZonePlayback(zone) {
-    const video = document.createElement("video");
-    video.src = zone.url;
-    video.muted = true;
-    video.autoplay = true;
-    video.loop = true;
-    await video.play();
-
-    zone.video = video;
-
-    const interval = 1000 / zone.fps;
-    setInterval(() => {
-      this.ctx.drawImage(video, zone.x, zone.y, zone.width, zone.height);
-    }, interval);
+  startRendering() {
+    this.zones.forEach(zone => {
+      const interval = 1000 / zone.fps;
+      setInterval(() => {
+        this.ctx.drawImage(
+          this.video,
+          zone.x, zone.y, zone.w, zone.h,
+          zone.x, zone.y, zone.w, zone.h
+        );
+      }, interval);
+    });
   }
 }
